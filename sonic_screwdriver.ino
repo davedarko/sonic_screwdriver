@@ -1,31 +1,64 @@
+/* 
+Author: Dave Plöger
+V0.1 - 06.05.2013 First GITted
+
+This code is free to use. 
+
+This is where I got the code for the LDR from
+http://www.hobbytronics.co.uk/arduino-tutorial8-nightlight
+
+The tone tutorial helped with the 1812 part
+http://arduino.cc/en/Tutorial/tone
+
+Comes in handy to switch 433MHz stuff.
+http://code.google.com/p/rc-switch/
+
+Great IR library, the basis for tv-b-gone, when I remember correct.
+http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
+*/
+
 #include "pitches.h"
+// http://arduino.cc/en/Tutorial/tone
+
 #include "RCSwitch.h"
+// http://code.google.com/p/rc-switch/
+
 #include <IRremote.h>
+// http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
+
+
+// digital pins or output
+const int buttonUpPin    =  2;     // UP Button
+const int redPin         =  3;     // RED LED PIN
+const int buttonDownPin  =  4;     // DOWN BUTTON
+const int bluPin         =  5;     // BLUE LED PIN
+const int grePin         =  6;     // GREEN LED PIN
+const int buttonEnterPin =  8;     // ENTER BUTTON
+const int irPin          =  9;     // IR LED PIN
+const int send433        = 10;     // 433 EMITTER PIN
+const int speakerOut     = 11;     // SPEAKER PIN
+
+// analog pins or input
+const int sensorPin      = A0;     // LDR PIN
+
+// variables will change:
+int buttonUpState        = 0;      // variable for reading the pushbutton status
+int buttonDownState      = 0;      // variable for reading the pushbutton status
+int buttonEnterState     = 0;      // variable for reading the pushbutton status
+unsigned int sensorValue = 0;  // variable to store the value coming from the ldr
 
 RCSwitch mySwitch = RCSwitch();
 IRsend irsend;
 int toggle = 0;
-
 unsigned long long OnOff = 0xc800f740cLL;
-const int buttonUpPin = 2;     // the number of the pushbutton pin
-const int buttonDownPin = 4;     // the number of the pushbutton pin
-const int buttonEnterPin = 8;     // the number of the pushbutton pin
-const int redPin =  3;      // the number of the LED pin
-const int bluPin =  5;      // the number of the LED pin
-const int grePin =  6;      // the number of the LED pin
-const int irPin =  9;      // the number of the LED pin
-const int send433 =  10;      // the number of the LED pin
-const int speakerOut =  11;      // the number of the LED pin
-int sensorPin = A0;            // select the input pin for the ldr
-unsigned int sensorValue = 0;  // variable to store the value coming from the ldr
+
+// start intensity for rgb colors
+int red   = 127;
+int blue  = 127;
+int green = 127;
 
 int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
 int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
-
-// variables will change:
-int buttonUpState = 0;         // variable for reading the pushbutton status
-int buttonDownState = 0;         // variable for reading the pushbutton status
-int buttonEnterState = 0;         // variable for reading the pushbutton status
 
 char * menu_loop[] = {
       "433", 
@@ -33,26 +66,25 @@ char * menu_loop[] = {
       "THEREMIN", 
       "AUDIO", 
       "1812", 
-      "ROT",
-      "GRUEN",
-      "BLAU",
+      "RED",
+      "GREEN",
+      "BLUE",
       "MIX",
       "LUMOS",
       "ORANGE",
       "PURPLE", 
       "CYAN",
       "IR",
-      "WARMWEISS",
+      "WHITE",
       "UV"
 };
 int index = 0;
 int menu_length = 0;
- int red=255;
-  int blue=255;
-   int green=255;
+
 void setup() {
-  // start serial port at 9600 bps:
+  // start serial port at 9600 bps
   Serial.begin(9600);
+  /* too lazy to count by myself */
   menu_length = sizeof(menu_loop)/sizeof(char *);
   mySwitch.enableTransmit(send433);
   Serial.print(menu_length);
@@ -71,7 +103,7 @@ void loop() {
   buttonEnterState = digitalRead(buttonEnterPin);
 
   if (buttonUpState == HIGH) {     
-    if (menu_loop[index]=="ROT") {
+    if (menu_loop[index]=="RED") {
       if (buttonDownState == HIGH) {
         if (red<254) red = (255 + red+1) % 255;
         delay(10);
@@ -125,7 +157,7 @@ void loop() {
     if (menu_loop[index]=="IR") {
         analogWrite(irPin, 127);
     }
-    if (menu_loop[index]=="GRUEN") {
+    if (menu_loop[index]=="GREEN") {
       if (buttonDownState == HIGH) {
         if (green<254) green = (255 + green+1) % 255;
         delay(10);
@@ -136,7 +168,7 @@ void loop() {
       } 
       analogWrite(grePin, green);
     }
-    if (menu_loop[index]=="BLAU") {
+    if (menu_loop[index]=="BLUE") {
       if (buttonDownState == HIGH) {
         if (blue<254) blue = (255 + blue+1) % 255;
         delay(10);
@@ -161,7 +193,8 @@ void loop() {
       analogWrite(bluPin, 64);
     }
     if(menu_loop[index]=="1812") {
-      analogWrite(speakerOut, 0);     
+      analogWrite(speakerOut, 0);
+      /*borrowed by arduino tone samples */
       for (int thisNote = 0; thisNote < 10; thisNote++) {
                   
         // to calculate the note duration, take one second 
