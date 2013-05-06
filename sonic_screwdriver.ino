@@ -3,6 +3,8 @@ Author: Dave Plöger
 V0.1 - 06.05.2013 First GITted
 
 This code is free to use. 
+you can find this or an updated version here:
+https://github.com/davedarko/sonic_screwdriver
 
 This is where I got the code for the LDR from
 http://www.hobbytronics.co.uk/arduino-tutorial8-nightlight
