@@ -48,8 +48,8 @@ const int speakerOut     = 11;     // SPEAKER PIN
 
 // analog pins or input
 const int ldrPin      = A0;     // LDR PIN
-//const int free      = A1;     // free PIN
-//const int free      = A2;     // free PIN
+//const int free      = A1;     // Spoiler: EMF Detector
+//const int free      = A2;     // Spoiler: MIC IN
 //const int free      = A3;     // free PIN
 //const int free      = A4;     // free PIN
 //const int free      = A5;     // free PIN
@@ -101,6 +101,9 @@ void setup() {
   menu_length = sizeof(menu_loop)/sizeof(char *);
   mySwitch.enableTransmit(send433);
   Serial.print(menu_length);
+  Serial.write("\n");
+  Serial.write(menu_loop[index]);
+  Serial.write("\n");
   pinMode(buttonUpPin, INPUT);
   pinMode(buttonDownPin, INPUT);
   pinMode(buttonEnterPin, INPUT);     
@@ -127,15 +130,15 @@ void loop() {
   buttonDownState = digitalRead(buttonDownPin);
   buttonEnterState = digitalRead(buttonEnterPin);
 
-  if (buttonUpState == HIGH) {
+  if (buttonEnterState == HIGH) {
 
     // displaying basic color and setting the brightness for the mixed color
     if (menu_loop[index]=="RED") {
-      if (buttonDownState == HIGH) {
+      if (buttonUpState == HIGH) {
         if (red<254) red = (255 + red+1) % 255;
         delay(10);
       } 
-      if (buttonEnterState == HIGH) {
+      if (buttonDownState == HIGH) {
         if(red>0) red = (255 + red-1) % 255;
         delay(10);
       } 
@@ -143,11 +146,11 @@ void loop() {
     }
     // displaying basic color and setting the brightness for the mixed color    
     if (menu_loop[index]=="GREEN") {
-      if (buttonDownState == HIGH) {
+      if (buttonUpState == HIGH) {
         if (green<254) green = (255 + green+1) % 255;
         delay(10);
       } 
-      if (buttonEnterState == HIGH) {
+      if (buttonDownState == HIGH) {
         if(green>0) green = (255 + green-1) % 255;
         delay(10);
       } 
@@ -155,11 +158,11 @@ void loop() {
     }
     // displaying basic color and setting the brightness for the mixed color
     if (menu_loop[index]=="BLUE") {
-      if (buttonDownState == HIGH) {
+      if (buttonUpState == HIGH) {
         if (blue<254) blue = (255 + blue+1) % 255;
         delay(10);
       } 
-      if (buttonEnterState == HIGH) {
+      if (buttonDownState == HIGH) {
         if(blue>0) blue = (255 + blue-1) % 255;
         delay(10);
       } 
@@ -190,13 +193,13 @@ void loop() {
         tone(speakerOut, sensorValue);
     }
     if (menu_loop[index]=="433") {
-      if (buttonDownState == HIGH) {
+      if (buttonUpState == HIGH) {
         lights_on();
         mySwitch.switchOn("11000", "00100");
         lights_off();
         delay(250);
       }
-      if (buttonEnterState == HIGH) {
+      if (buttonDownState == HIGH) {
         lights_on();
         mySwitch.switchOff("11000", "00100");
         lights_off();
@@ -242,13 +245,13 @@ void loop() {
     lights_off();
     
     noTone(speakerOut);
-    if (buttonDownState == HIGH) {
+    if (buttonUpState == HIGH) {
       index = (menu_length + index+1)%menu_length;
       Serial.write(menu_loop[index]);
       Serial.write("\n");
       delay(250);
     } 
-    if (buttonEnterState == HIGH) {
+    if (buttonDownState == HIGH) {
       index = (menu_length + index-1)%menu_length;
       Serial.write(menu_loop[index]);
     Serial.write("\n");
