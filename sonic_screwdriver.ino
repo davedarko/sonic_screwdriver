@@ -15,6 +15,9 @@ http://code.google.com/p/rc-switch/
 
 Great IR library, the basis for tv-b-gone, when I remember correct.
 http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
+
+future implementation for EMF Detector
+http://www.instructables.com/id/Arduino-EMF-Detector/
 */
 
 #include "pitches.h"
@@ -33,13 +36,22 @@ const int redPin         =  3;     // RED LED PIN
 const int buttonDownPin  =  4;     // DOWN BUTTON
 const int bluPin         =  5;     // BLUE LED PIN
 const int grePin         =  6;     // GREEN LED PIN
+//const int free         =  7;     // free PIN
 const int buttonEnterPin =  8;     // ENTER BUTTON
 const int irPin          =  9;     // IR LED PIN
 const int send433        = 10;     // 433 EMITTER PIN
 const int speakerOut     = 11;     // SPEAKER PIN
+//const int free         = 12;     // free PIN
+//const int free         = 13;     // free PIN
 
 // analog pins or input
-const int sensorPin      = A0;     // LDR PIN
+const int ldrPin      = A0;     // LDR PIN
+//const int free      = A1;     // free PIN
+//const int free      = A2;     // free PIN
+//const int free      = A3;     // free PIN
+//const int free      = A4;     // free PIN
+//const int free      = A5;     // free PIN
+//const int free      = A6;     // free PIN
 
 // variables will change:
 int buttonUpState        = 0;      // variable for reading the pushbutton status
@@ -125,12 +137,12 @@ void loop() {
     }
     
     if (menu_loop[index]=="AUDIO") {    
-        sensorValue = analogRead(sensorPin);     
+        sensorValue = analogRead(ldrPin);     
         analogWrite(speakerOut, sensorValue /4);
          Serial.println(sensorValue /4);
     }
     if (menu_loop[index]=="THEREMIN") {    
-        sensorValue = analogRead(sensorPin);     
+        sensorValue = analogRead(ldrPin);     
         tone(speakerOut, sensorValue);
     }
     if (menu_loop[index]=="433") {
@@ -144,7 +156,7 @@ void loop() {
       }
     }
     if (menu_loop[index]=="LUMOS") {    
-        sensorValue = analogRead(sensorPin);
+        sensorValue = analogRead(ldrPin);
         analogWrite(redPin, 255 - (sensorValue / 4));
         analogWrite(grePin, 255 - (sensorValue / 4));
         analogWrite(bluPin, 255 - (sensorValue / 4));
