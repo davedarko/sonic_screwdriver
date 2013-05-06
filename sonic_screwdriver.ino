@@ -54,6 +54,7 @@ const int ldrPin      = A0;     // LDR PIN
 //const int free      = A4;     // free PIN
 //const int free      = A5;     // free PIN
 //const int free      = A6;     // free PIN
+//const int free      = A7;     // free PIN
 
 // variables will change:
 int buttonUpState        = 0;      // variable for reading the pushbutton status
