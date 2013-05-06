@@ -67,9 +67,11 @@ int toggle = 0;
 unsigned long long OnOff = 0xc800f740cLL;
 
 // start intensity for rgb colors
-int red   = 127;
-int blue  = 127;
-int green = 127;
+int ir    = 127;
+int red   = 255;
+int blue  = 100;
+int green = 45;
+
 
 int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
 int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
@@ -85,9 +87,6 @@ char * menu_loop[] = {
       "BLUE",
       "MIX",
       "LUMOS",
-      "ORANGE",
-      "PURPLE", 
-      "CYAN",
       "IR",
       "WHITE",
       "UV"
@@ -110,13 +109,27 @@ void setup() {
   pinMode(bluPin, OUTPUT);
 }
 
+void lights_on() {
+  analogWrite(redPin, red);
+  analogWrite(grePin, green);
+  analogWrite(bluPin, blue);
+}
+
+void lights_off() {
+  digitalWrite(redPin, LOW);
+  digitalWrite(grePin, LOW);
+  digitalWrite(bluPin, LOW);
+}
+
 void loop() {
 // read the state of the pushbutton value:
   buttonUpState = digitalRead(buttonUpPin);
   buttonDownState = digitalRead(buttonDownPin);
   buttonEnterState = digitalRead(buttonEnterPin);
 
-  if (buttonUpState == HIGH) {     
+  if (buttonUpState == HIGH) {
+
+    // displaying basic color and setting the brightness for the mixed color
     if (menu_loop[index]=="RED") {
       if (buttonDownState == HIGH) {
         if (red<254) red = (255 + red+1) % 255;
@@ -128,8 +141,37 @@ void loop() {
       } 
       analogWrite(redPin, red);
     }
+    // displaying basic color and setting the brightness for the mixed color    
+    if (menu_loop[index]=="GREEN") {
+      if (buttonDownState == HIGH) {
+        if (green<254) green = (255 + green+1) % 255;
+        delay(10);
+      } 
+      if (buttonEnterState == HIGH) {
+        if(green>0) green = (255 + green-1) % 255;
+        delay(10);
+      } 
+      analogWrite(grePin, green);
+    }
+    // displaying basic color and setting the brightness for the mixed color
+    if (menu_loop[index]=="BLUE") {
+      if (buttonDownState == HIGH) {
+        if (blue<254) blue = (255 + blue+1) % 255;
+        delay(10);
+      } 
+      if (buttonEnterState == HIGH) {
+        if(blue>0) blue = (255 + blue-1) % 255;
+        delay(10);
+      } 
+      analogWrite(bluPin, blue);
+    }
+    
+    if (menu_loop[index]=="IR") {
+        analogWrite(irPin, ir);
+    }
     
     if (menu_loop[index]=="XBOX") {
+      lights_on();
       if (toggle == 0) {
         irsend.sendRC6(OnOff, 36);
       } else {
@@ -149,68 +191,36 @@ void loop() {
     }
     if (menu_loop[index]=="433") {
       if (buttonDownState == HIGH) {
+        lights_on();
         mySwitch.switchOn("11000", "00100");
-        delay(500);
+        lights_off();
+        delay(250);
       }
       if (buttonEnterState == HIGH) {
+        lights_on();
         mySwitch.switchOff("11000", "00100");
-          delay(500);
+        lights_off();
+        delay(250);
       }
     }
+    if (menu_loop[index]=="MIX") {
+        lights_on();
+    }
+
     if (menu_loop[index]=="LUMOS") {    
         sensorValue = analogRead(ldrPin);
         analogWrite(redPin, 255 - (sensorValue / 4));
         analogWrite(grePin, 255 - (sensorValue / 4));
         analogWrite(bluPin, 255 - (sensorValue / 4));
     }
-    if (menu_loop[index]=="MIX") {
-        analogWrite(redPin, red);
-        analogWrite(grePin, green);
-        analogWrite(bluPin, blue);
-    }
-    if (menu_loop[index]=="IR") {
-        analogWrite(irPin, 127);
-    }
-    if (menu_loop[index]=="GREEN") {
-      if (buttonDownState == HIGH) {
-        if (green<254) green = (255 + green+1) % 255;
-        delay(10);
-      } 
-      if (buttonEnterState == HIGH) {
-        if(green>0) green = (255 + green-1) % 255;
-        delay(10);
-      } 
-      analogWrite(grePin, green);
-    }
-    if (menu_loop[index]=="BLUE") {
-      if (buttonDownState == HIGH) {
-        if (blue<254) blue = (255 + blue+1) % 255;
-        delay(10);
-      } 
-      if (buttonEnterState == HIGH) {
-        if(blue>0) blue = (255 + blue-1) % 255;
-        delay(10);
-      } 
-      analogWrite(bluPin, blue);
-    }
     
-    if (menu_loop[index]=="ORANGE") {
-      analogWrite(redPin, 255);
-      analogWrite(grePin, 64);
-    }
-    if (menu_loop[index]=="CYAN") {
-      analogWrite(bluPin, 255);
-      analogWrite(grePin, 255);
-    }
-    if (menu_loop[index]=="PURPLE") {
-      analogWrite(redPin, 255);
-      analogWrite(bluPin, 64);
-    }
     if(menu_loop[index]=="1812") {
+      lights_on();
       analogWrite(speakerOut, 0);
       /*borrowed by arduino tone samples */
       for (int thisNote = 0; thisNote < 10; thisNote++) {
-                  
+        buttonEnterState = digitalRead(buttonEnterPin);
+        if (buttonEnterState == LOW) break;
         // to calculate the note duration, take one second 
         // divided by the note type.
         //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
@@ -224,14 +234,13 @@ void loop() {
         // stop the tone playing:
         noTone(speakerOut);
       }
+      lights_off();
     }
   } 
   else {
     // turn LED off:
-    digitalWrite(redPin, LOW);
-    digitalWrite(grePin, LOW);
-    digitalWrite(bluPin, LOW);
-    digitalWrite(irPin, LOW);
+    lights_off();
+    
     noTone(speakerOut);
     if (buttonDownState == HIGH) {
       index = (menu_length + index+1)%menu_length;
