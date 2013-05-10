@@ -2,6 +2,9 @@
 Author: Dave Plöger
 V0.1 - 06.05.2013 First GITted
 
+TODO or wouldn't it be nice too...
+# make it blink/beep in bpms as metronome
+
 This code is free to use. 
 you can find this or an updated version here:
 https://github.com/davedarko/sonic_screwdriver
@@ -90,11 +93,12 @@ char * menu_loop[] = {
       "LUMOS",
       "IR",
       "WHITE",
-      "UV"
+      "UV",
+      "SUPERHIGH"
 };
 int index = 0;
 int menu_length = 0;
-
+char * state = "";
 void setup() {
   // start serial port at 9600 bps
   Serial.begin(9600);
@@ -130,11 +134,11 @@ void loop() {
   buttonUpState = digitalRead(buttonUpPin);
   buttonDownState = digitalRead(buttonDownPin);
   buttonEnterState = digitalRead(buttonEnterPin);
-
+  state = menu_loop[index];
   if (buttonEnterState == HIGH) {
 
     // displaying basic color and setting the brightness for the mixed color
-    if (menu_loop[index]=="RED") {
+    if (state=="RED") {
       if (buttonUpState == HIGH) {
         if (red<254) red = (255 + red+1) % 255;
         delay(10);
@@ -146,7 +150,7 @@ void loop() {
       analogWrite(redPin, red);
     }
     // displaying basic color and setting the brightness for the mixed color    
-    if (menu_loop[index]=="GREEN") {
+    if (state=="GREEN") {
       if (buttonUpState == HIGH) {
         if (green<254) green = (255 + green+1) % 255;
         delay(10);
@@ -158,7 +162,7 @@ void loop() {
       analogWrite(grePin, green);
     }
     // displaying basic color and setting the brightness for the mixed color
-    if (menu_loop[index]=="BLUE") {
+    if (state=="BLUE") {
       if (buttonUpState == HIGH) {
         if (blue<254) blue = (255 + blue+1) % 255;
         delay(10);
@@ -170,11 +174,11 @@ void loop() {
       analogWrite(bluPin, blue);
     }
     
-    if (menu_loop[index]=="IR") {
+    if (state=="IR") {
         analogWrite(irPin, ir);
     }
     
-    if (menu_loop[index]=="XBOX") {
+    if (state=="XBOX") {
       lights_on();
       if (toggle == 0) {
         irsend.sendRC6(OnOff, 36);
@@ -184,16 +188,16 @@ void loop() {
       toggle = 1 - toggle;
     }
     
-    if (menu_loop[index]=="AUDIO") {    
+    if (state=="AUDIO") {    
         sensorValue = analogRead(ldrPin);     
         analogWrite(speakerOut, sensorValue /4);
          Serial.println(sensorValue /4);
     }
-    if (menu_loop[index]=="THEREMIN") {    
+    if (state=="THEREMIN") {    
         sensorValue = analogRead(ldrPin);     
         tone(speakerOut, sensorValue);
     }
-    if (menu_loop[index]=="433") {
+    if (state=="433") {
       if (buttonUpState == HIGH) {
         lights_on();
         mySwitch.switchOn("11000", "00100");
@@ -207,18 +211,20 @@ void loop() {
         delay(250);
       }
     }
-    if (menu_loop[index]=="MIX") {
+    if (state=="MIX") {
         lights_on();
     }
 
-    if (menu_loop[index]=="LUMOS") {    
+    if (state=="LUMOS") {    
         sensorValue = analogRead(ldrPin);
         analogWrite(redPin, 255 - (sensorValue / 4));
         analogWrite(grePin, 255 - (sensorValue / 4));
         analogWrite(bluPin, 255 - (sensorValue / 4));
     }
-    
-    if(menu_loop[index]=="1812") {
+    if (state=="SUPERHIGH") {
+    tone(speakerOut, 8000);
+    }
+    if(state=="1812") {
       lights_on();
       analogWrite(speakerOut, 0);
       /*borrowed by arduino tone samples */
