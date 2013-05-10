@@ -34,6 +34,7 @@ http://www.instructables.com/id/Arduino-EMF-Detector/
 #include <IRremote.h>
 // http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
 
+#include <math.h>
 
 // digital pins or output
 const int buttonUpPin    =  2;     // UP Button
@@ -76,7 +77,6 @@ int red   = 255;
 int blue  = 100;
 int green = 45;
 
-
 int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
 int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
 
@@ -94,11 +94,13 @@ char * menu_loop[] = {
       "IR",
       "WHITE",
       "UV",
-      "SUPERHIGH"
+      "SUPERHIGH",
+      "433ANARCHY"
 };
 int index = 0;
 int menu_length = 0;
 char * state = "";
+
 void setup() {
   // start serial port at 9600 bps
   Serial.begin(9600);
@@ -136,7 +138,7 @@ void loop() {
   buttonEnterState = digitalRead(buttonEnterPin);
   state = menu_loop[index];
   if (buttonEnterState == HIGH) {
-
+  
     // displaying basic color and setting the brightness for the mixed color
     if (state=="RED") {
       if (buttonUpState == HIGH) {
@@ -149,6 +151,7 @@ void loop() {
       } 
       analogWrite(redPin, red);
     }
+    
     // displaying basic color and setting the brightness for the mixed color    
     if (state=="GREEN") {
       if (buttonUpState == HIGH) {
@@ -161,6 +164,7 @@ void loop() {
       } 
       analogWrite(grePin, green);
     }
+    
     // displaying basic color and setting the brightness for the mixed color
     if (state=="BLUE") {
       if (buttonUpState == HIGH) {
@@ -193,10 +197,12 @@ void loop() {
         analogWrite(speakerOut, sensorValue /4);
          Serial.println(sensorValue /4);
     }
+    
     if (state=="THEREMIN") {    
         sensorValue = analogRead(ldrPin);     
         tone(speakerOut, sensorValue);
     }
+    
     if (state=="433") {
       if (buttonUpState == HIGH) {
         lights_on();
@@ -211,6 +217,40 @@ void loop() {
         delay(250);
       }
     }
+    
+    if (state=="433ANARCHY") {
+      if (buttonUpState == HIGH) {
+        lights_on();          
+        for (int i=0;i<32;i++) {
+          char remote[6];
+          byte2str5(remote, i);
+          mySwitch.switchOn(remote, "10000");
+          mySwitch.switchOn(remote, "01000");
+          mySwitch.switchOn(remote, "00100");
+          mySwitch.switchOn(remote, "00010");
+          mySwitch.switchOn(remote, "00001");
+          mySwitch.switchOn(remote, "00000");
+          lights_off();
+          delay(250);
+        }
+      }
+      if (buttonDownState == HIGH) {
+        lights_on();
+        for (int i=0;i<32;i++) {
+          char remote[6];
+          byte2str5(remote, i);
+          mySwitch.switchOff(remote, "10000");
+          mySwitch.switchOff(remote, "01000");
+          mySwitch.switchOff(remote, "00100");
+          mySwitch.switchOff(remote, "00010");
+          mySwitch.switchOff(remote, "00001");
+          mySwitch.switchOff(remote, "00000");
+        }
+        lights_off();
+        delay(250);
+      }
+    }
+    
     if (state=="MIX") {
         lights_on();
     }
@@ -265,4 +305,27 @@ void loop() {
       delay(250);
     }
   }
+}
+int pow_int (int x, int y) {
+  if (y==0) return 1;
+  if (y==1) return x;
+  if (y>1) return x * pow_int(x,y-1);
+  return 0;
+}
+
+void byte2str5 (char* localString, int conv) {
+  char thearray[6] ="00000";
+  int dummy = conv;
+  
+  for (int i = 4; i>=0; i--) {
+    int powi = pow_int(2,i);
+    int temp = dummy - powi;
+    if( temp >= 0) {
+      thearray[4-i] = '1';
+      dummy=temp;
+    } else {
+      thearray[4-i] = '0';
+    }
+  }
+  strcpy(localString, thearray);
 }
