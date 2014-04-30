@@ -51,12 +51,12 @@ const int uvPin          = 12;     // free PIN
 //const int free         = 13;     // free PIN
 
 // analog pins or input
-const int ldrPin      = A0;     // LDR PIN
-//const int free      = A1;     // Spoiler: EMF Detector
-//const int free      = A2;     // Spoiler: MIC IN
-//const int free      = A3;     // free PIN
-//const int free      = A4;     // free PIN
-//const int free      = A5;     // free PIN
+const int fader       = A0;     // Fader
+const int ldrPin      = A1;     // LDR PIN
+//const int free      = A2;     // Spoiler: EMF Detector
+//const int free      = A3;     // Spoiler: MIC IN
+//const int free      = A4;     // SDA IIC Pin
+//const int free      = A5;     // SCL IIC PIN
 //const int free      = A6;     // free PIN
 //const int free      = A7;     // free PIN
 
