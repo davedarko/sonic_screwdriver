@@ -38,16 +38,16 @@ http://www.instructables.com/id/Arduino-EMF-Detector/
 
 // digital pins or output
 const int buttonUpPin    =  2;     // UP Button
-const int redPin         =  3;     // RED LED PIN
+const int redPin         =  3;     // ~ RED LED PIN
 const int buttonDownPin  =  4;     // DOWN BUTTON
-const int bluPin         =  5;     // BLUE LED PIN
-const int grePin         =  6;     // GREEN LED PIN
+const int grePin         =  5;     // ~ GREEN LED PIN
+const int bluPin         =  6;     // ~ BLUE LED PIN
 const int send433        =  7;     // 433 EMITTER PIN
 const int buttonEnterPin =  8;     // ENTER BUTTON
-const int irPin          =  9;     // IR LED PIN
-//const int free         = 10;     // free PWM PIN
-const int speakerOut     = 11;     // SPEAKER PIN
-//const int free         = 12;     // free PIN
+const int irPin          =  9;     // ~ IR LED PIN
+const int wwPin          = 10;     // ~ WW PWM PIN
+const int speakerOut     = 11;     // ~ SPEAKER PIN
+const int uvPin          = 12;     // free PIN
 //const int free         = 13;     // free PIN
 
 // analog pins or input
@@ -77,8 +77,8 @@ int red   = 255;
 int blue  = 100;
 int green = 45;
 
-int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
-int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
+//int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
+//int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
 
 char * menu_loop[] = {
       "433", 
@@ -117,18 +117,10 @@ void setup() {
   pinMode(redPin, OUTPUT);
   pinMode(grePin, OUTPUT);
   pinMode(bluPin, OUTPUT);
-}
-
-void lights_on() {
-  analogWrite(redPin, red);
-  analogWrite(grePin, green);
-  analogWrite(bluPin, blue);
-}
-
-void lights_off() {
-  digitalWrite(redPin, LOW);
-  digitalWrite(grePin, LOW);
-  digitalWrite(bluPin, LOW);
+  pinMode(irPin, OUTPUT);
+  pinMode(wwPin, OUTPUT);
+  pinMode(uvPin, OUTPUT);
+  pinMode(speakerOut, OUTPUT);
 }
 
 void loop() {
@@ -267,7 +259,7 @@ void loop() {
     if(state=="1812") {
       lights_on();
       analogWrite(speakerOut, 0);
-      /*borrowed by arduino tone samples */
+      // borrowed by arduino tone samples 
       for (int thisNote = 0; thisNote < 10; thisNote++) {
         buttonEnterState = digitalRead(buttonEnterPin);
         if (buttonEnterState == LOW) break;
@@ -306,6 +298,19 @@ void loop() {
     }
   }
 }
+
+void lights_on() {
+  analogWrite(redPin, red);
+  analogWrite(grePin, green);
+  analogWrite(bluPin, blue);
+}
+
+void lights_off() {
+  digitalWrite(redPin, LOW);
+  digitalWrite(grePin, LOW);
+  digitalWrite(bluPin, LOW);
+}
+
 int pow_int (int x, int y) {
   if (y==0) return 1;
   if (y==1) return x;
