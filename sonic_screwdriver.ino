@@ -1,9 +1,14 @@
+#include <RCSwitch.h>
+
 /* 
 Author: Dave Plöger
 V0.1 - 06.05.2013 First GITted
 
 TODO or wouldn't it be nice too...
 # make it blink/beep in bpms as metronome
+# integrate accelerator script
+# integrate power saving / sleep script
+
 
 This code is free to use. 
 you can find this or an updated version here:
@@ -25,10 +30,8 @@ future implementation for EMF Detector
 http://www.instructables.com/id/Arduino-EMF-Detector/
 */
 
-#include "pitches.h"
-// http://arduino.cc/en/Tutorial/tone
+//#include "RCSwitch.h"
 
-#include "RCSwitch.h"
 // http://code.google.com/p/rc-switch/
 
 #include <IRremote.h>
@@ -44,10 +47,10 @@ const int grePin         =  5;     // ~ GREEN LED PIN
 const int bluPin         =  6;     // ~ BLUE LED PIN
 const int send433        =  7;     // 433 EMITTER PIN
 const int buttonEnterPin =  8;     // ENTER BUTTON
-const int irPin          =  9;     // ~ IR LED PIN
+const int irPin          =  9;     // ~ IR LED PIN pwm needed for IRremote library
 const int wwPin          = 10;     // ~ WW PWM PIN
 const int speakerOut     = 11;     // ~ SPEAKER PIN
-const int uvPin          = 12;     // free PIN
+const int uvPin          = 12;     // uvPIN
 //const int free         = 13;     // free PIN
 
 // analog pins or input
@@ -55,10 +58,10 @@ const int fader       = A0;     // Fader
 const int ldrPin      = A1;     // LDR PIN
 //const int free      = A2;     // Spoiler: EMF Detector
 //const int free      = A3;     // Spoiler: MIC IN
-//const int free      = A4;     // SDA IIC Pin
-//const int free      = A5;     // SCL IIC PIN
+//const int i2c_sda   = A4;     // SDA IIC Pin
+//const int i2c_scl   = A5;     // SCL IIC PIN
 //const int free      = A6;     // free PIN
-//const int free      = A7;     // free PIN
+//const int send433   = A7;     // this is physically joined with D7 
 
 // variables will change:
 int buttonUpState        = 0;      // variable for reading the pushbutton status
@@ -76,16 +79,13 @@ int ir    = 127;
 int red   = 255;
 int blue  = 100;
 int green = 45;
-
-//int melody[] = { NOTE_A5, NOTE_D6, NOTE_E6, NOTE_FS6, NOTE_E6,NOTE_D6, NOTE_E6, NOTE_FS6,NOTE_D6,NOTE_D6};
-//int noteDurations[] = { 8, 8, 8, 8,8,8,8,4,4,2 };
+int ww    = 127;
 
 char * menu_loop[] = {
       "433", 
       "XBOX", 
       "THEREMIN", 
       "AUDIO", 
-      "1812", 
       "RED",
       "GREEN",
       "BLUE",
@@ -94,7 +94,6 @@ char * menu_loop[] = {
       "IR",
       "WHITE",
       "UV",
-      "SUPERHIGH",
       "433ANARCHY"
 };
 int index = 0;
@@ -170,8 +169,25 @@ void loop() {
       analogWrite(bluPin, blue);
     }
     
+    // displaying basic color and setting the brightness for the mixed color
+    if (state=="WHITE") {
+      if (buttonUpState == HIGH) {
+        if (ww<254) ww = (255 + ww+1) % 255;
+        delay(10);
+      } 
+      if (buttonDownState == HIGH) {
+        if(ww>0) ww = (255 + ww-1) % 255;
+        delay(10);
+      } 
+      analogWrite(wwPin, ww);
+    }
+    
     if (state=="IR") {
         analogWrite(irPin, ir);
+    }
+    
+    if (state=="UV") {
+        digitalWrite(uvPin, HIGH);
     }
     
     if (state=="XBOX") {
@@ -191,8 +207,12 @@ void loop() {
     }
     
     if (state=="THEREMIN") {    
-        sensorValue = analogRead(ldrPin);     
-        tone(speakerOut, sensorValue);
+        sensorValue = analogRead(ldrPin); 
+        int thisPitch = map(sensorValue, 0 , 1024, 120, 1500);
+
+  // play the pitch:
+    // http://forum.arduino.cc/index.php/topic,106043.msg959970.html#msg959970
+        toneWorkaround(speakerOut, thisPitch, 10);
     }
     
     if (state=="433") {
@@ -252,38 +272,16 @@ void loop() {
         analogWrite(redPin, 255 - (sensorValue / 4));
         analogWrite(grePin, 255 - (sensorValue / 4));
         analogWrite(bluPin, 255 - (sensorValue / 4));
+                analogWrite(wwPin, 255 - (sensorValue / 4));
+
     }
-    if (state=="SUPERHIGH") {
-    tone(speakerOut, 8000);
-    }
-    if(state=="1812") {
-      lights_on();
-      analogWrite(speakerOut, 0);
-      // borrowed by arduino tone samples 
-      for (int thisNote = 0; thisNote < 10; thisNote++) {
-        buttonEnterState = digitalRead(buttonEnterPin);
-        if (buttonEnterState == LOW) break;
-        // to calculate the note duration, take one second 
-        // divided by the note type.
-        //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-        int noteDuration = 1000/noteDurations[thisNote];
-        tone(speakerOut, melody[thisNote],noteDuration);
-                      
-        // to distinguish the notes, set a minimum time between them.
-        //the note's duration + 30% seems to work well:
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        // stop the tone playing:
-        noTone(speakerOut);
-      }
-      lights_off();
-    }
+
   } 
   else {
     // turn LED off:
     lights_off();
+    digitalWrite(speakerOut, LOW);
     
-    noTone(speakerOut);
     if (buttonUpState == HIGH) {
       index = (menu_length + index+1)%menu_length;
       Serial.write(menu_loop[index]);
@@ -303,12 +301,16 @@ void lights_on() {
   analogWrite(redPin, red);
   analogWrite(grePin, green);
   analogWrite(bluPin, blue);
+  analogWrite(wwPin, ww);
 }
 
 void lights_off() {
   digitalWrite(redPin, LOW);
   digitalWrite(grePin, LOW);
   digitalWrite(bluPin, LOW);
+  digitalWrite(wwPin, LOW);
+    digitalWrite(irPin, LOW);
+      digitalWrite(uvPin, LOW);
 }
 
 int pow_int (int x, int y) {
@@ -333,4 +335,14 @@ void byte2str5 (char* localString, int conv) {
     }
   }
   strcpy(localString, thearray);
+}
+void toneWorkaround(byte tonePin, int frequency, int duration) {
+  int period = 1000000L / frequency;
+  int pulse = period / 2;
+  for (long i = 0; i < duration * 1000L; i += period) {
+    digitalWrite(tonePin, HIGH);
+    delayMicroseconds(pulse);
+    digitalWrite(tonePin, LOW);
+    delayMicroseconds(pulse);
+  }
 }
