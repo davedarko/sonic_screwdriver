@@ -1,5 +1,3 @@
-#include <RCSwitch.h>
-
 /* 
 Author: Dave Plöger
 V0.1 - 06.05.2013 First GITted
@@ -8,7 +6,10 @@ TODO or wouldn't it be nice too...
 # make it blink/beep in bpms as metronome
 # integrate accelerator script
 # integrate power saving / sleep script
+# use digital 2 as interrupt for sleep
 
+For documentation of the hardware check the link
+http://hackaday.io/project/972-Sonic-Screwdriver
 
 This code is free to use. 
 you can find this or an updated version here:
@@ -16,9 +17,6 @@ https://github.com/davedarko/sonic_screwdriver
 
 This is where I got the code for the LDR from
 http://www.hobbytronics.co.uk/arduino-tutorial8-nightlight
-
-The tone tutorial helped with the 1812 part
-http://arduino.cc/en/Tutorial/tone
 
 Comes in handy to switch 433MHz stuff.
 http://code.google.com/p/rc-switch/
@@ -28,40 +26,51 @@ http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
 
 future implementation for EMF Detector
 http://www.instructables.com/id/Arduino-EMF-Detector/
+
+IR lib for codes for xbox and other goodies (like tvbgone)
+https://github.com/shirriff/Arduino-IRremote
+http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
+
 */
 
-//#include "RCSwitch.h"
-
-// http://code.google.com/p/rc-switch/
-
 #include <IRremote.h>
-// http://www.righto.com/2010/12/64-bit-rc6-codes-arduino-and-xbox.html
-
+#include <RCSwitch.h>
 #include <math.h>
 
+// ATTENTION - the pinout may change frequently
+// next will probably be the up and down buttons, they will share an analog pin soon
+// the ENTERBUTTON will move to pin 2 for INTERRUPT of sleep code
+// 4,8,13 will be the charlie plexed menu bargraph (coming up with some fancy POV stuff)
 // digital pins or output
-const int buttonUpPin    =  2;     // UP Button
+const int buttonUpPin    =  2;     // UP Button, soon enter button
 const int redPin         =  3;     // ~ RED LED PIN
-const int buttonDownPin  =  4;     // DOWN BUTTON
+const int buttonDownPin  =  4;     // DOWN BUTTON, soon charlie_led1
 const int grePin         =  5;     // ~ GREEN LED PIN
 const int bluPin         =  6;     // ~ BLUE LED PIN
 const int send433        =  7;     // 433 EMITTER PIN
-const int buttonEnterPin =  8;     // ENTER BUTTON
+const int buttonEnterPin =  8;     // ENTER BUTTON, soon charlie_led1
 const int irPin          =  9;     // ~ IR LED PIN pwm needed for IRremote library
 const int wwPin          = 10;     // ~ WW PWM PIN
 const int speakerOut     = 11;     // ~ SPEAKER PIN
 const int uvPin          = 12;     // uvPIN
-//const int free         = 13;     // free PIN
+//const int free         = 13;     // free PIN, soon charlie_led1
 
 // analog pins or input
 const int fader       = A0;     // Fader
 const int ldrPin      = A1;     // LDR PIN
-//const int free      = A2;     // Spoiler: EMF Detector
-//const int free      = A3;     // Spoiler: MIC IN
+//const int free      = A2;     // soon Button up and down
+//const int free      = A3;     // Spoiler: MIC IN or EMF or BPW34 for gamma-detection
 //const int i2c_sda   = A4;     // SDA IIC Pin
 //const int i2c_scl   = A5;     // SCL IIC PIN
-//const int free      = A6;     // free PIN
-//const int send433   = A7;     // this is physically joined with D7 
+//const int free      = A6;     // free PIN, no idea
+//const int send433   = A7;     // this is physically joined with D7, so not soon to be taken
+
+int outputs[] = {
+  redPin, 
+  grePin,
+  bluPin,
+  wwPin
+};
 
 // variables will change:
 int buttonUpState        = 0;      // variable for reading the pushbutton status
@@ -82,20 +91,27 @@ int green = 45;
 int ww    = 127;
 
 char * menu_loop[] = {
-      "433", 
-      "XBOX", 
-      "THEREMIN", 
-      "AUDIO", 
+      "DAZZ",
+
       "RED",
       "GREEN",
       "BLUE",
       "MIX",
       "LUMOS",
-      "IR",
-      "WHITE",
+      "WW",
       "UV",
-      "433ANARCHY"
+      "IR",
+
+      "XBOX", 
+      
+      "433", 
+      "433ANARCHY",
+      
+      "THEREMIN", 
+      "AUDIO"
+
 };
+
 int index = 0;
 int menu_length = 0;
 char * state = "";
@@ -170,7 +186,7 @@ void loop() {
     }
     
     // displaying basic color and setting the brightness for the mixed color
-    if (state=="WHITE") {
+    if (state=="WW") {
       if (buttonUpState == HIGH) {
         if (ww<254) ww = (255 + ww+1) % 255;
         delay(10);
@@ -189,6 +205,19 @@ void loop() {
     if (state=="UV") {
         digitalWrite(uvPin, HIGH);
     }
+
+//  http://hackaday.com/2009/09/28/open-source-weapon-makes-you-puke/    
+    if (state=="DAZZ") {
+      long randNumber = random(256);
+      long randIndexNumber = random(4);
+    
+      analogWrite(outputs[randIndexNumber], randNumber);
+      
+      // has to be around 10Hz == 100ms 
+      // for a clomplete new color set this has to be circled 4 times,
+      // so delay is 25 
+      delay(25); 
+    }
     
     if (state=="XBOX") {
       lights_on();
@@ -201,18 +230,22 @@ void loop() {
     }
     
     if (state=="AUDIO") {    
+        lights_on();
         sensorValue = analogRead(ldrPin);     
         analogWrite(speakerOut, sensorValue /4);
          Serial.println(sensorValue /4);
+         lights_off();
     }
     
     if (state=="THEREMIN") {    
+        lights_on();
         sensorValue = analogRead(ldrPin); 
         int thisPitch = map(sensorValue, 0 , 1024, 120, 1500);
 
   // play the pitch:
     // http://forum.arduino.cc/index.php/topic,106043.msg959970.html#msg959970
         toneWorkaround(speakerOut, thisPitch, 10);
+        lights_off();
     }
     
     if (state=="433") {
@@ -268,12 +301,10 @@ void loop() {
     }
 
     if (state=="LUMOS") {    
-        sensorValue = analogRead(ldrPin);
-        analogWrite(redPin, 255 - (sensorValue / 4));
-        analogWrite(grePin, 255 - (sensorValue / 4));
-        analogWrite(bluPin, 255 - (sensorValue / 4));
-                analogWrite(wwPin, 255 - (sensorValue / 4));
-
+        analogWrite(redPin, 255);
+        analogWrite(grePin, 255);
+        analogWrite(bluPin, 255);
+        analogWrite(wwPin, 255);
     }
 
   } 
